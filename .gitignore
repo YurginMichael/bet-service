@@ -1,0 +1,29 @@
+# Backend (Laravel)
+backend/vendor/
+backend/node_modules/
+backend/public/storage
+backend/storage/*.key
+backend/.env
+backend/.phpunit.result.cache
+backend/phpunit.result.cache
+backend/homestead.yaml
+backend/Homestead.json
+backend/.idea/
+backend/.vscode/
+backend/storage/logs/
+backend/bootstrap/cache/*.php
+
+# Frontend (Node/Vue)
+frontend/node_modules/
+frontend/dist/
+frontend/.cache/
+frontend/.env.local
+frontend/.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker/Temp
+.tmp/
+.env
