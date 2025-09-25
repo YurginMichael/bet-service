@@ -3,8 +3,8 @@ version: "3.9"
 services:
   app:
     build:
-      context: ./docker/php
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./docker/php/Dockerfile
     container_name: bet_app
     working_dir: /var/www/html
     volumes:
@@ -20,10 +20,18 @@ services:
       DB_USERNAME: bet
       DB_PASSWORD: bet
       SIGNING_SECRET: changeme
+      SANCTUM_STATEFUL_DOMAINS: localhost:8080,127.0.0.1:8080
     depends_on:
       - db
     networks:
       - betnet
+    command: ["/usr/local/bin/entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "php", "artisan", "tinker", "--execute", "echo 'OK'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   nginx:
     build:
@@ -59,12 +67,14 @@ services:
   frontend:
     build:
       context: ./frontend
+      no_cache: true
     container_name: bet_frontend
     command: ["npm", "run", "serve"]
     ports:
       - "8080:8080"
-    volumes:
-      - ./frontend:/usr/src/app
+    # Убираем volume монтирование, чтобы node_modules не перезаписывались
+    # volumes:
+    #   - ./frontend:/usr/src/app
     environment:
       VUE_APP_API_BASE: http://localhost:8081
     depends_on:

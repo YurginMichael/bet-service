@@ -9,9 +9,7 @@
   },
   "dependencies": {
     "axios": "^1.6.8",
-    "vue": "^2.7.14"
-  },
-  "devDependencies": {
+    "vue": "^2.7.14",
     "@vue/cli-service": "^5.0.8",
     "vue-template-compiler": "^2.7.14"
   }

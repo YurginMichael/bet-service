@@ -1,87 +1,186 @@
 <template>
-  <div class="wrap">
-    <h1>Ставки</h1>
-    <section class="card">
-      <form @submit.prevent="submit">
-        <label>
-          Событие
-          <select v-model="form.event_id">
-            <option disabled value="">Выберите событие</option>
-            <option v-for="e in events" :key="e.id" :value="e.id">{{ e.name }}</option>
-          </select>
-        </label>
-        <label>
-          Исход
-          <select v-model="form.outcome">
-            <option value="win">Победа</option>
-            <option value="lose">Поражение</option>
-          </select>
-        </label>
-        <label>
-          Сумма
-          <input type="number" min="1" step="1" v-model.number="form.amount" />
-        </label>
-        <button :disabled="submitting">Поставить</button>
-      </form>
-      <p v-if="error" class="error">{{ error }}</p>
-      <p v-if="ok" class="ok">Ставка создана</p>
-    </section>
+  <div class="app">
+    <header class="header">
+      <h1>🎰 Сервис ставок</h1>
+      <p class="subtitle">Безопасные ставки с защитой от мошенничества</p>
+    </header>
+
+    <main class="main">
+      <div v-if="!isAuthenticated" class="auth-screen">
+        <LoginForm @login-success="handleLoginSuccess" />
+      </div>
+
+      <div v-else class="dashboard">
+        <UserInfo 
+          :user="currentUser" 
+          @logout="handleLogout"
+        />
+        
+        <div class="content">
+          <div class="left-column">
+            <BetForm 
+              :user-balance="currentUser.balance"
+              @bet-created="handleBetCreated"
+            />
+          </div>
+          
+          <div class="right-column">
+            <BetsList />
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>Тестовое задание: Laravel + Vue2 + Docker</p>
+    </footer>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
+import LoginForm from './components/LoginForm.vue'
+import UserInfo from './components/UserInfo.vue'
+import BetForm from './components/BetForm.vue'
+import BetsList from './components/BetsList.vue'
 
 export default {
+  name: 'App',
+  components: {
+    LoginForm,
+    UserInfo,
+    BetForm,
+    BetsList
+  },
   data() {
     return {
-      events: [],
-      form: { event_id: '', outcome: 'win', amount: 0 },
-      submitting: false,
-      error: '',
-      ok: false
+      isAuthenticated: false,
+      currentUser: null
     }
   },
-  async created() {
-    try {
-      const { data } = await axios.get('/api/events')
-      this.events = data || []
-    } catch (_) {
-      this.events = []
-    }
+  mounted() {
+    this.checkAuthStatus()
   },
   methods: {
-    async submit() {
-      this.error = ''
-      this.ok = false
-      if (!this.form.event_id || !this.form.amount || this.form.amount <= 0) {
-        this.error = 'Проверьте данные'
-        return
+    checkAuthStatus() {
+      const token = localStorage.getItem('auth_token')
+      const user = localStorage.getItem('user')
+      
+      if (token && user) {
+        try {
+          this.currentUser = JSON.parse(user)
+          this.isAuthenticated = true
+          return true
+        } catch (error) {
+          this.clearAuth()
+          return false
+        }
       }
-      this.submitting = true
-      try {
-        await axios.post('/api/bets', this.form, {
-          headers: {
-            'Idempotency-Key': Date.now().toString()
-          }
-        })
-        this.ok = true
-      } catch (e) {
-        this.error = (e.response && e.response.data && e.response.data.message) || 'Ошибка'
-      } finally {
-        this.submitting = false
-      }
+      return false
+    },
+    handleLoginSuccess(user) {
+      this.currentUser = user
+      this.isAuthenticated = true
+    },
+    handleLogout() {
+      this.clearAuth()
+    },
+    handleBetCreated(newBalance) {
+      this.currentUser.balance = newBalance
+      localStorage.setItem('user', JSON.stringify(this.currentUser))
+    },
+    clearAuth() {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user')
+      this.isAuthenticated = false
+      this.currentUser = null
     }
   }
 }
 </script>
 
 <style>
-.wrap{max-width:560px;margin:40px auto;padding:0 16px;font-family:Arial,Helvetica,sans-serif}
-.card{border:1px solid #e5e7eb;border-radius:8px;padding:16px;background:#fff}
-label{display:block;margin-bottom:12px}
-input,select{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px}
-button{padding:10px 16px;border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer}
-.error{color:#b91c1c;margin-top:8px}
-.ok{color:#047857;margin-top:8px}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #f8fafc;
+  color: #1f2937;
+  line-height: 1.6;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
+.main {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  width: 100%;
+}
+
+.auth-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.dashboard {
+  width: 100%;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+  
+  .header h1 {
+    font-size: 2rem;
+  }
+  
+  .main {
+    padding: 1rem;
+  }
+}
+
+.footer {
+  background: #374151;
+  color: #9ca3af;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
 </style>

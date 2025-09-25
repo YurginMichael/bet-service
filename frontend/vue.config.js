@@ -5,8 +5,9 @@ module.exports = {
     client: { overlay: false },
     proxy: {
       '^/api': {
-        target: process.env.VUE_APP_API_BASE || 'http://nginx',
-        changeOrigin: true
+        target: 'http://nginx',
+        changeOrigin: true,
+        secure: false
       }
     }
   }

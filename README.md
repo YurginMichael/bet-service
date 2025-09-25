@@ -1,65 +1,76 @@
-# Мини‑сервис ставок (Laravel + MySQL, Vue 2, Docker)
+# Мини-сервис ставок
 
-Проект под тестовое задание: бэкенд на Laravel + MySQL, фронтенд на Vue 2. Запуск через Docker (docker-compose up --build).
+Laravel + MySQL + Vue 2 + Docker. Полнофункциональный сервис ставок с защитой от мошенничества.
 
-## Запуск
+## Быстрый старт
 
-1. Скопируйте переменные окружения при необходимости: `.env.example` → `.env` (в корне).
-2. Соберите и запустите контейнеры:
-```
+```bash
+git clone <repository-url>
+cd bet-service-test
+
+# Запускаем контейнеры 
 docker-compose up --build
 ```
-3. Инициализация выполняется автоматически в контейнере `app`:
-   - Установка зависимостей, генерация ключа приложения.
-   - Миграции и сиды (пользователи, события, балансы).
-4. Доступы:
-   - API: `http://localhost:8081`
-   - Frontend: `http://localhost:8080`
 
-## Функциональность
+**Доступы:**
+- Frontend: http://localhost:8080
+- API: http://localhost:8081
 
-- Аутентификация пользователя (Sanctum) и защищённые эндпоинты.
-- Эндпоинты:
-  - POST `/api/bets` — создать ставку (event_id, outcome, amount).
-  - GET `/api/bets` — список ставок текущего пользователя.
-  - GET `/api/events` — список событий (из сидов).
-- Списание баланса и фиксация транзакции при создании ставки.
-- Защита от double-spend (транзакции/блокировки БД, уникальные ключи идемпотентности).
-- Идемпотентность по заголовку `Idempotency-Key`.
-- Rate limiting ставок (например, 10 запросов/минуту).
-- Проверка подписи `X-Signature` (HMAC).
-- Логирование подозрительных действий в `fraud_logs`.
 
-## Архитектура
+## Демо аккаунты
 
-- Backend: Laravel (PHP-FPM) + Nginx + MySQL.
-- Frontend: Vue 2 (dev‑server с прокси на API).
-- Миграции и сиды — стандартные каталоги Laravel. Данные поднимаются при старте.
-- Безопасность: Sanctum, HMAC подпись, идемпотентность, rate limiting, журналирование.
+| Email | Пароль | Баланс |
+|-------|--------|---------|
+| user1@test.com | password123 | 5000₽ |
+| user2@test.com | password123 | 1000₽ |
+| poor@test.com | password123 | 10₽ |
+
+## API Эндпоинты
+
+- `POST /api/register` — регистрация
+- `POST /api/login` — вход
+- `GET /api/events` — список событий
+- `POST /api/bets` — создание ставки
+- `GET /api/bets` — история ставок
+- `POST /api/bets/external` — внешний API с HMAC
+
+## Безопасность
+
+- **Защита от double-spend** — блокировки в БД
+- **Идемпотентность** — заголовок `Idempotency-Key`
+- **Rate Limiting** — 10 запросов/минуту
+- **HMAC подписи** — `X-Signature` для внешних API
+- **Fraud Logging** — логирование подозрительных действий
+
+## Тестирование
+
+```bash
+# Все тесты
+docker-compose exec app ./vendor/bin/phpunit tests/Feature/
+
+# Конкретные тесты
+docker-compose exec app ./vendor/bin/phpunit tests/Feature/BetCreationTest.php
+docker-compose exec app ./vendor/bin/phpunit tests/Feature/AuthenticationTest.php
+docker-compose exec app ./vendor/bin/phpunit tests/Feature/SecurityTest.php
+```
+
+**Результат:** 24 теста, 58 assertions, все проходят
 
 ## Команды
 
-- Запуск: `docker-compose up --build`
-- Остановка: `docker-compose down`
-- Миграции/сиды:
-```
+```bash
+# Управление
+docker-compose up --build          # С пересборкой и видимым процессом
+docker-compose up -d               # В фоне
+docker-compose down
+docker-compose restart
+
+# Laravel
 docker-compose exec app php artisan migrate --force
 docker-compose exec app php artisan db:seed --force
+docker-compose exec app ./vendor/bin/phpunit tests/Feature/
+
+# Логи
+docker-compose logs app --follow
 ```
-- Тесты:
-```
-docker-compose exec app php artisan test
-```
 
-## Переменные окружения
-
-- `APP_ENV`, `APP_DEBUG`
-- `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
-- `SIGNING_SECRET` — секрет для `X-Signature` (HMAC)
-
-## Структура
-
-- `backend/` — Laravel приложение
-- `frontend/` — Vue 2 приложение
-- `docker/` — Dockerfile’ы и конфигурация Nginx
-- `docker-compose.yml` — сервисы

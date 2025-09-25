@@ -86,6 +86,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | HMAC Signing Secret
+    |--------------------------------------------------------------------------
+    |
+    | This secret is used for HMAC signature verification in external API
+    | requests. Set this in your ".env" file.
+    |
+    */
+
+    'signing_secret' => env('SIGNING_SECRET', 'your-secret-key'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Encryption Key
     |--------------------------------------------------------------------------
     |
